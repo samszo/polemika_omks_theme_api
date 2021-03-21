@@ -1,0 +1,55 @@
+<?php
+
+$type = $this->params()->fromQuery('type','');
+$log = $this->logger();
+$props = $this->pageProps();
+
+switch ($type) {
+        case 'carteArgumentaire':
+                $id = $this->params()->fromQuery('id',false);
+                $item = $id ? $this->api()->read('items', $id)->getContent() : false;
+                echo $this->json($this->getCarteArgumentaire($item, $props));
+                break;
+        case 'aleaPhotoMondes':
+                //récupère une photo aléatoire qui à un monde
+                echo $this->json($this->getPhotos('alea',1,['property'=>[['joiner'=>'and','property'=>$props['plmk:hasMonde']->id(),'type'=>'ex']]]));
+                break;
+        case 'conceptsMonde':
+                $format = $this->params()->fromQuery('format','reseau');
+                $rs = $this->getConceptsMondes(
+                        $this->params()->fromQuery('nivMax',0)
+                        ,$format
+                );
+                if($format=='csv'){
+                        $output = fopen("php://output",'w') or die("Can't open php://output");
+                        header("Content-Type:application/csv"); 
+                        header("Content-Disposition:attachment;filename=mondes.csv"); 
+                        foreach($rs as $r) {
+                            fputcsv($output, $r);
+                        }
+                        fclose($output) or die("Can't close php://output");
+                }else echo $this->json($rs);
+                break;
+        case 'ajoutRapport':
+                $user = $this->identity();
+                //création des rapports
+                $ca = $this->CartoAffectFactory(['user'=>$user,'view'=>$this->params()->fromPost()]);
+                echo $this->json($ca);                
+                break;
+        case 'aleaItem':
+                $is = $this->params()->fromPost('itemSet');
+                $item = $this->AleaDocument(1,$is)[0];
+                $medias = $item->media();
+                echo '{"item":'.$this->json($item).',"medias":'.$this->json($medias).'}';                
+                break;
+        case 'calculEmotions':
+                $emotions = $this->calculEmotions($this->params()->fromQuery('id'));
+                echo $this->json($emotions);                
+                break;
+        }
+
+
+?>
+
+
+
