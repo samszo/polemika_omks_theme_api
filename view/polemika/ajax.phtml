@@ -43,9 +43,24 @@ switch ($type) {
                 echo '{"item":'.$this->json($item).',"medias":'.$this->json($medias).'}';                
                 break;
         case 'calculEmotions':
-                $emotions = $this->calculEmotions($this->params()->fromQuery('id'));
+                $emotions = $this->calculEmotions(
+                        $this->params()->fromQuery('process')
+                        ,$this->params()->fromQuery('action')
+                        ,$this->params()->fromQuery('crible')
+                );
                 echo $this->json($emotions);                
                 break;
+        case 'resultEmotions':
+                $emotions = $this->resultEmotions(
+                        $this->params()->fromQuery('action')
+                        ,$this->params()->fromQuery('crible')
+                );
+                echo $this->json($emotions);                
+                break;
+        case 'resultItems':
+                echo $this->json($this->resultItems($this->params()->fromPost('docs')));                
+                break;                        
+        
         }
 
 
