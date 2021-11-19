@@ -5,10 +5,9 @@ $log = $this->logger();
 $props = $this->pageProps();
 
 switch ($type) {
-        case 'carteArgumentaire':
-                $id = $this->params()->fromQuery('id',false);
-                $item = $id ? $this->api()->read('items', $id)->getContent() : false;
-                echo $this->json($this->getCarteArgumentaire($item, $props));
+        case 'diagramme':
+                $user = $this->identity();
+                echo $this->json($this->DiagrammeFactory(['user'=>$user, 'props'=>$props,'query'=>$this->params()->fromQuery(),'post'=>$this->params()->fromPost()]));
                 break;
         case 'aleaPhotoMondes':
                 //récupère une photo aléatoire qui à un monde
@@ -43,9 +42,26 @@ switch ($type) {
                 echo '{"item":'.$this->json($item).',"medias":'.$this->json($medias).'}';                
                 break;
         case 'calculEmotions':
-                $emotions = $this->calculEmotions($this->params()->fromQuery('id'));
+                $emotions = $this->calculEmotions(
+                        $this->params()->fromQuery('process')
+                        ,$this->params()->fromQuery('action')
+                );
                 echo $this->json($emotions);                
                 break;
+        case 'resultEmotions':
+                $emotions = $this->resultEmotions(
+                        $this->params()->fromQuery('action')
+                        ,$this->params()->fromQuery('crible')
+                );
+                echo $this->json($emotions);                
+                break;
+        case 'resultItems':
+                echo $this->json($this->resultItems($this->params()->fromPost('docs')));                
+                break;                        
+        case 'querySql':
+                $rs = $this->QuerySqlFactory($this->params()->fromQuery());    
+                echo $this->json($rs);                
+                break;                               
         }
 
 

@@ -1,7 +1,7 @@
 <?php
 namespace OmekaTheme\Helper;
 
-use Zend\View\Helper\AbstractHelper;
+use Laminas\View\Helper\AbstractHelper;
 
 class getConceptsMondes extends AbstractHelper
 {
@@ -33,7 +33,7 @@ class getConceptsMondes extends AbstractHelper
         $this->reseau = ['nodes'=>[],'links'=>[]];
 
         //récupère l'identifiant de la collection
-        $idItemSet = $this->getView()->themeSetting('item_set_id_monde');
+        $idItemSet = 5763;//$this->getView()->themeSetting('item_set_id_monde');
         //récupère la collection
         $monde = $this->api->read('item_sets',$idItemSet)->getContent();
         
@@ -189,14 +189,23 @@ class getConceptsMondes extends AbstractHelper
     }
 
 	/**
-     * récupère les propriétés d'un item
+     * construction de la liste des colonne à partir du ressource template ou des propriétés de l'item
      *
      * @param  o:item   $item
      *
      * @return int
      */
     function getCols($item){
-        //liste des propriétés
+        //liste des propriétés à partir du ressource template
+        $vals = $item->resourceTemplate() ? $item->resourceTemplate()->resourceTemplateProperties() : [];
+        foreach ($vals as $p) {
+          $oP = $p->property();
+          if (!in_array($oP->term(), $this->cols)) {
+            $this->cols[]=$oP->term();
+          }          
+        }
+        if($vals)return;
+        //liste des propriétés à partir des propriétés de l'item
         $vals = $item->values();
         foreach ($vals as $k => $v) {
           if (!in_array($k, $this->cols)) {
@@ -220,27 +229,41 @@ class getConceptsMondes extends AbstractHelper
         $maxLigne = $numLigne;
         $this->lignes[$numLigne][0] = $numLigne;
         $this->lignes[$numLigne][1] = $item->id();
-        foreach ($vals as $k => $v) {
+//        foreach ($vals as $k => $v) {
+        foreach ($this->cols as $k) {
           $curLigne=$numLigne;
-          $val = $item->value($k, ['all' => true]);
-          foreach ($val as $value) {
-            $this->lignes[$curLigne][0] = $curLigne;
-            //complète la ligne
-            for ($curCol=1; $curCol < $numCols; $curCol++) { 
-              if(!isset($this->lignes[$curLigne][$curCol]))
-                $this->lignes[$curLigne][$curCol]="";
-            }
-            //ajoute la valeur de la colonne
-            $relatedResource = $value->valueResource();
-            if ($relatedResource) {
-              $this->lignes[$curLigne][$numCols]=$relatedResource->id().' - '.$relatedResource->displayTitle();
+          if($k!='num' && $k!='id'){
+            $val = $item->value($k, ['all' => true]);
+            if(!count($val)){
+              $this->lignes[$curLigne][0] = $curLigne;
+              //complète la ligne
+              for ($curCol=1; $curCol < $numCols; $curCol++) { 
+                if(!isset($this->lignes[$curLigne][$curCol]))
+                  $this->lignes[$curLigne][$curCol]="";
+              }
+              $this->lignes[$curLigne][$numCols]="-";
+              $curLigne++;
             }else{
-              $this->lignes[$curLigne][$numCols]=$value->__toString();
+              foreach ($val as $value) {
+                $this->lignes[$curLigne][0] = $curLigne;
+                //complète la ligne
+                for ($curCol=1; $curCol < $numCols; $curCol++) { 
+                  if(!isset($this->lignes[$curLigne][$curCol]))
+                    $this->lignes[$curLigne][$curCol]="";
+                }
+                //ajoute la valeur de la colonne
+                $relatedResource = $value->valueResource();
+                if ($relatedResource) {
+                  $this->lignes[$curLigne][$numCols]=$relatedResource->id().' - '.$relatedResource->displayTitle();
+                }else{
+                  $this->lignes[$curLigne][$numCols]=$value->__toString();
+                }
+                $curLigne++;
+              }  
             }
-            $curLigne++;
+            $maxLigne = $maxLigne < $curLigne ? $curLigne : $maxLigne;
+            $numCols++;
           }
-          $maxLigne = $maxLigne < $curLigne ? $curLigne : $maxLigne;
-          $numCols++;
         }
         return $maxLigne;
     }
